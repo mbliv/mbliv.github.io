@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prismatic Decision Assistant</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, #FF1493, #FF8C00, #FFD700);
+            background-size: 400% 400%;
+            animation: prismShift 15s ease infinite;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            position: fixed;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 90%;
+            margin: 2rem auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 4rem);
+            justify-content: space-between;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-bottom: 20px;
+        }
+
+        .dice-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 1rem auto;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .dice {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #FF1493, #FF8C00);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(255, 20, 147, 0.4);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .decision-input {
+            flex-grow: 1;
+            max-width: none;
+            padding: 1rem;
+            font-size: 16px;
+            background: linear-gradient(45deg, 
+                rgba(255, 20, 147, 0.2),
+                rgba(255, 140, 0, 0.2),
+                rgba(255, 215, 0, 0.2)
+            );
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+
+        .decision-input::placeholder {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg,
+                rgba(255, 20, 147, 0.3),
+                rgba(255, 140, 0, 0.3)
+            );
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9rem;
+            padding: 0 1rem;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(45deg,
+                rgba(255, 20, 147, 0.4),
+                rgba(255, 140, 0, 0.4)
+            );
+        }
+
+        .prismatic-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(45deg, 
+                rgba(255, 20, 147, 0.3),
+                rgba(255, 140, 0, 0.3),
+                rgba(255, 215, 0, 0.3)
+            );
+            animation: rotate 10s linear infinite;
+            pointer-events: none;
+        }
+
+        .decision-text {
+            font-size: 1.2rem;
+            padding: 1rem;
+            text-align: center;
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            z-index: 1;
+        }
+
+        .launch-button {
+            background: linear-gradient(45deg,
+                rgba(255, 20, 147, 0.3),
+                rgba(255, 140, 0, 0.3),
+                rgba(255, 215, 0, 0.3)
+            );
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            margin-top: auto;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            backdrop-filter: blur(5px);
+        }
+
+        .launch-button:hover {
+            background: linear-gradient(45deg,
+                rgba(255, 20, 147, 0.4),
+                rgba(255, 140, 0, 0.4),
+                rgba(255, 215, 0, 0.4)
+            );
+        }
+
+        .instructions {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin: 1rem 0;
+            padding: 0 1rem;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes prismShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem auto;
+                height: calc(100vh - 2rem);
+            }
+            
+            .dice-container {
+                width: 150px;
+                height: 150px;
+            }
+
+            .decision-text {
+                font-size: 1rem;
+            }
+
+            .submit-btn {
+                padding: 0 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="dice-container" id="diceContainer">
+                <div class="dice">
+                    <div class="prismatic-effect"></div>
+                    <div class="decision-text" id="decisionText">Ask me anything</div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" class="decision-input" placeholder="ask and we shall decide..." id="decisionInput">
+                <button class="submit-btn" id="submitBtn">decide, please</button>
+            </div>
+        </div>
+
+        <div>
+            <p class="instructions">To use this app on iOS:</p>
+            <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/yourusername/your-repo/main/decision-assistant.html" class="launch-button" target="_blank">
+                Launch Web Version
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Decision databases
+        const colors = ['Red', 'Blue', 'Green', 'Purple', 'Pink', 'Black', 'White', 'Silver', 'Gold', 'Yellow', 'Orange', 'Turquoise', 'Violet', 'Magenta', 'Coral'];
+        const foods = ['Pizza', 'Sushi', 'Tacos', 'Pasta', 'Salad', 'Burger', 'Sandwich', 'Curry', 'Stir Fry', 'Ramen', 'Pho', 'BBQ', 'Mediterranean Bowl'];
+        const activities = ['Go for a walk', 'Watch a movie', 'Read a book', 'Try cooking something new', 'Call a friend', 'Visit a museum', 'Go shopping', 'Play a game', 'Learn something new', 'Do some gardening', 'Exercise'];
+        const locations = ['Park', 'Beach', 'Coffee shop', 'Library', 'Museum', 'Mall', 'Restaurant', 'Movie theater', 'Gym', 'Botanical garden', 'Farmers market'];
+        const iceCreamFlavors = ['Vanilla', 'Chocolate', 'Strawberry', 'Mint Chocolate Chip', 'Cookie Dough', 'Rocky Road', 'Butter Pecan', 'Coffee', 'Pistachio', 'Cookies and Cream', 'Salted Caramel', 'Chocolate Chip', 'Neapolitan', 'Cherry Garcia', 'Birthday Cake'];
+        const gifts = ['Book', 'Gift Card', 'Watch', 'Jewelry', 'Electronics', 'Clothing', 'Experience Day', 'Concert Tickets', 'Spa Day', 'Cooking Class', 'Art Supplies', 'Gaming Console', 'Smart Device', 'Subscription Box', 'Handmade Item', 'Plant', 'Photo Album'];
+        const holidays = ['Christmas', 'New Year', 'Halloween', 'Thanksgiving', 'Easter', 'Valentine\'s Day', 'St. Patrick\'s Day', 'Independence Day', 'Labor Day', 'Memorial Day', 'Birthday', 'Anniversary', 'Mother\'s Day', 'Father\'s Day'];
+        const vacationDestinations = ['Paris, France', 'Tokyo, Japan', 'Bali, Indonesia', 'New York City, USA', 'Rome, Italy', 'Barcelona, Spain', 'Maldives', 'Hawaii, USA', 'Swiss Alps', 'Greek Islands', 'Caribbean Islands', 'Australian Outback', 'African Safari', 'Iceland', 'Costa Rica', 'Canadian Rockies', 'Thailand'];
+
+        function parseInput(input) {
+            if (!input) {
+                return "I'll decide when you ask...";
+            }
+
+            const text = input.toLowerCase();
+            
+            if (text.includes(' or ')) {
+                const options = text.split(' or ').map(opt => opt.trim());
+                return options[Math.floor(Math.random() * options.length)];
+            }
+
+            const commandWords = ['pick', 'select', 'choose'];
+            if (commandWords.some(cmd => text.startsWith(cmd))) {
+                const subject = text.split(' ').slice(1).join(' ');
+                return parseSubject(subject);
+            }
+
+            if (text.startsWith('should') || text.startsWith('will') || text.startsWith('can') || 
+                text.startsWith('is') || text.startsWith('are') || text.startsWith('do')) {
+                return getYesNoResponse();
+            }
+
+            return parseSubject(text);
+        }
+
+        function parseSubject(text) {
+            if (text.includes('ice cream') || text.includes('flavor')) {
+                return iceCreamFlavors[Math.floor(Math.random() * iceCreamFlavors.length)];
+            }
+            if (text.includes('gift') || text.includes('present') || text.includes('buy for')) {
+                return gifts[Math.floor(Math.random() * gifts.length)];
+            }
+            if (text.includes('holiday') || text.includes('celebration')) {
+                return holidays[Math.floor(Math.random() * holidays.length)];
+            }
+            if (text.includes('vacation') || text.includes('travel') || text.includes('trip') || 
+                text.includes('destination') || text.includes('visit')) {
+                return vacationDestinations[Math.floor(Math.random() * vacationDestinations.length)];
+            }
+            if (text.includes('color')) {
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            if (text.includes('eat') || text.includes('food') || text.includes('dinner') || text.includes('lunch')) {
+                return foods[Math.floor(Math.random() * foods.length)];
+            }
+            if (text.includes('do') || text.includes('activity')) {
+                return activities[Math.floor(Math.random() * activities.length)];
+            }
+            if (text.includes('where') || text.includes('place') || text.includes('go')) {
+                return locations[Math.floor(Math.random() * locations.length)];
+            }
+
+            return "I'll decide when you ask...";
+        }
+
+        function getYesNoResponse() {
+            const positiveResponses = [
+                "Yes, absolutely!", 
+                "Yes, go for it!", 
+                "Yes, that's a great idea",
+                "Definitely yes",
+                "The signs point to yes",
+                "Yes, trust your instincts"
+            ];
+            const negativeResponses = [
+                "Not right now",
+                "Maybe wait on that",
+                "No, this isn't the time",
+                "The signs point to no",
+                "Better not to",
+                "No, reconsider this one"
+            ];
+            const uncertainResponses = [
+                "The answer is unclear",
+                "Ask again later",
+                "Better to reflect on this more",
+                "The time isn't right to decide",
+                "Meditate on this question"
+            ];
+            
+            const responseType = Math.random();
+            if (responseType < 0.4) {
+                return positiveResponses[Math.floor(Math.random() * positiveResponses.length)];
+            } else if (responseType < 0.8) {
+                return negativeResponses[Math.floor(Math.random() * negativeResponses.length)];
+            } else {
+                return uncertainResponses[Math.floor(Math.random() * uncertainResponses.length)];
+            }
+        }
+
+        function makeDecision() {
+            const input = decisionInput.value.trim();
+            return parseInput(input);
+        }
+
+        function animateDecision() {
+            diceContainer.style.transform = 'rotate(360deg)';
+            setTimeout(() => {
+                diceContainer.style.transform = 'rotate(0deg)';
+                decisionText.textContent = makeDecision();
+            }, 500);
+        }
+
+        // Event Listeners
+        decisionInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                animateDecision();
+            }
+        });
+
+        submitBtn.addEventListener('click', animateDecision);
+        diceContainer.addEventListener('click', animateDecision);
+    </script>
+</body>
+</html>
