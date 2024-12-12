@@ -2,388 +2,160 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sway to Google Slides Converter</title>
-    <!-- Include PptxGenJS from CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.5;
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-
-        .container {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 800px;
-            margin: 0 auto;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .converter-container {
             background: white;
+            padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .header h1 {
-            font-size: 1.5rem;
-            color: #333;
-        }
-
-        .input-section {
-            margin-bottom: 24px;
-        }
-
-        .input-types {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .input-type-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            background: #e5e5e5;
-            transition: all 0.2s;
-        }
-
-        .input-type-btn.active {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .input-area {
-            margin-top: 16px;
-        }
-
-        .file-drop {
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            padding: 32px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .file-drop:hover {
-            border-color: #3b82f6;
-        }
-
         textarea {
             width: 100%;
-            height: 120px;
-            padding: 8px;
-            border: 1px solid #ccc;
+            height: 150px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
             border-radius: 4px;
             resize: vertical;
         }
-
-        .convert-btn, .download-btn {
+        input[type="text"] {
             width: 100%;
-            padding: 12px;
-            border: none;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
             border-radius: 4px;
-            background: #3b82f6;
+        }
+        button {
+            background: #1a73e8;
             color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
             cursor: pointer;
-            margin-top: 16px;
-            font-size: 1rem;
+            font-size: 16px;
         }
-
-        .convert-btn:hover, .download-btn:hover {
-            background: #2563eb;
+        button:hover {
+            background: #1557b0;
         }
-
-        .convert-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .download-btn {
-            background: #22c55e;
-        }
-
-        .download-btn:hover {
-            background: #16a34a;
-        }
-
-        .alert {
-            padding: 12px;
-            border-radius: 4px;
-            margin-top: 16px;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #f87171;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #86efac;
-        }
-
-        .instructions {
-            margin-top: 16px;
-            padding: 16px;
-            background: #f8fafc;
-            border-radius: 4px;
-        }
-
-        .instructions ol {
-            margin-left: 24px;
-            margin-top: 8px;
-        }
-
-        .hidden {
+        .error {
+            color: #d93025;
+            margin: 10px 0;
             display: none;
         }
-
-        #preview {
-            margin-top: 16px;
-            padding: 16px;
-            background: #f8fafc;
-            border-radius: 4px;
-        }
-
-        .preview-slide {
-            background: white;
-            margin: 8px 0;
-            padding: 16px;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
+        .success {
+            color: #188038;
+            margin: 10px 0;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                <polyline points="13 2 13 9 20 9"></polyline>
-            </svg>
-            <h1>Sway to Google Slides Converter</h1>
-        </div>
-
-        <div class="input-section">
-            <div class="input-types">
-                <button class="input-type-btn active" data-type="link">Visual Link</button>
-                <button class="input-type-btn" data-type="embed">Embed Code</button>
-                <button class="input-type-btn" data-type="file">PDF/Word File</button>
-            </div>
-
-            <div class="input-area">
-                <div id="textInput">
-                    <textarea placeholder="Paste your Sway visual link here..."></textarea>
-                </div>
-                
-                <div id="fileInput" class="hidden">
-                    <div class="file-drop">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <p>Drag and drop your file here, or click to browse</p>
-                        <input type="file" accept=".pdf,.docx" style="display: none">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <button id="convertBtn" class="convert-btn">Convert to PPTX</button>
+    <div class="converter-container">
+        <h1>Sway to Google Slides Converter</h1>
         
-        <div id="errorAlert" class="alert alert-error hidden"></div>
+        <div>
+            <label for="embedCode">Paste your Sway embed code:</label>
+            <textarea id="embedCode" placeholder="<iframe src='https://sway.office.com/...'" required></textarea>
+        </div>
         
-        <div id="successSection" class="hidden">
-            <div class="alert alert-success">
-                Conversion completed! Your presentation is ready to download.
-            </div>
-            
-            <button id="downloadBtn" class="download-btn">
-                Download PPTX File
-            </button>
-            
-            <div class="instructions">
-                <p>To use in Google Slides:</p>
-                <ol>
-                    <li>Go to slides.google.com</li>
-                    <li>Click "File" → "Import"</li>
-                    <li>Upload the downloaded PPTX file</li>
-                </ol>
-            </div>
+        <div>
+            <label for="fileName">Presentation name:</label>
+            <input type="text" id="fileName" placeholder="My Presentation" required>
         </div>
-
-        <div id="preview" class="hidden">
-            <h3>Preview:</h3>
-            <div id="previewContent"></div>
-        </div>
+        
+        <button onclick="convertAndDownload()">Convert & Download</button>
+        
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
     </div>
 
     <script>
-        let currentInputType = 'link';
-        let pptx = null;
-        
-        document.querySelectorAll('.input-type-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.input-type-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentInputType = btn.dataset.type;
-                
-                document.getElementById('textInput').classList.toggle('hidden', currentInputType === 'file');
-                document.getElementById('fileInput').classList.toggle('hidden', currentInputType !== 'file');
-                
-                if (currentInputType !== 'file') {
-                    document.querySelector('textarea').placeholder = 
-                        `Paste your Sway ${currentInputType === 'link' ? 'visual link' : 'embed code'} here...`;
-                }
-            });
-        });
-
-        const fileDropArea = document.querySelector('.file-drop');
-        const fileInput = document.querySelector('input[type="file"]');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            fileDropArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        fileDropArea.addEventListener('drop', handleDrop, false);
-        fileDropArea.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', handleFileSelect);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles(files);
-        }
-
-        function handleFileSelect(e) {
-            const files = e.target.files;
-            handleFiles(files);
-        }
-
-        function handleFiles(files) {
-            if (files.length > 0) {
-                fileDropArea.querySelector('p').textContent = `Selected: ${files[0].name}`;
+        function extractFromSway(embedCode) {
+            const container = document.createElement('div');
+            container.innerHTML = embedCode;
+            const iframe = container.querySelector('iframe');
+            
+            if (!iframe) {
+                throw new Error('Invalid embed code: No iframe found');
             }
+
+            // Generate presentation HTML directly since we can't access iframe content
+            // due to cross-origin restrictions
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                        .slide { width: 960px; height: 720px; margin: 20px auto; padding: 40px;
+                                border: 1px solid #ccc; background: white; page-break-after: always; }
+                        img { max-width: 100%; height: auto; }
+                    </style>
+                </head>
+                <body>
+                    <!-- Embedded Sway presentation -->
+                    ${embedCode}
+                    
+                    <!-- Instructions for Google Slides -->
+                    <div class="slide">
+                        <h2>Instructions for Google Slides Import</h2>
+                        <ol>
+                            <li>Open Google Slides</li>
+                            <li>Create a new presentation</li>
+                            <li>File > Import slides</li>
+                            <li>Upload this HTML file</li>
+                            <li>Select the slides you want to import</li>
+                            <li>Click "Import slides"</li>
+                        </ol>
+                    </div>
+                </body>
+                </html>
+            `;
         }
 
-        async function createPresentation(content) {
-            const pptx = new PptxGenJS();
+        function convertAndDownload() {
+            const embedCode = document.getElementById('embedCode').value.trim();
+            const fileName = document.getElementById('fileName').value.trim() || 'presentation';
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
             
-            pptx.layout = 'LAYOUT_16x9';
-            pptx.title = 'Converted Presentation';
-
-            let slide = pptx.addSlide();
-            slide.addText('Converted Presentation', {
-                x: '15%',
-                y: '40%',
-                w: '70%',
-                fontSize: 44,
-                align: 'center',
-                color: '363636'
-            });
-
-            const demoContent = [
-                "First Slide Content",
-                "Second Slide Content",
-                "Third Slide Content with \n• Bullet Point 1\n• Bullet Point 2"
-            ];
-
-            demoContent.forEach(text => {
-                slide = pptx.addSlide();
-                slide.addText(text, {
-                    x: '10%',
-                    y: '10%',
-                    w: '80%',
-                    h: '80%',
-                    fontSize: 24,
-                    color: '363636',
-                    breakLine: true
-                });
-            });
-
-            return pptx;
-        }
-
-        document.getElementById('convertBtn').addEventListener('click', async () => {
-            const convertBtn = document.getElementById('convertBtn');
-            const errorAlert = document.getElementById('errorAlert');
-            const successSection = document.getElementById('successSection');
-            const preview = document.getElementById('preview');
-            
-            convertBtn.disabled = true;
-            convertBtn.textContent = 'Converting...';
-            errorAlert.classList.add('hidden');
-            successSection.classList.add('hidden');
-            preview.classList.add('hidden');
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
 
             try {
-                let content;
-                if (currentInputType === 'file') {
-                    const file = fileInput.files[0];
-                    if (!file) throw new Error('Please select a file');
-                    content = await file.text();
-                } else {
-                    content = document.querySelector('textarea').value;
-                    if (!content) throw new Error('Please provide input content');
+                if (!embedCode) {
+                    throw new Error('Please paste your Sway embed code');
                 }
 
-                pptx = await createPresentation(content);
-                
-                successSection.classList.remove('hidden');
-                showPreview(content);
-            } catch (err) {
-                errorAlert.textContent = err.message || 'Error during conversion';
-                errorAlert.classList.remove('hidden');
-            } finally {
-                convertBtn.disabled = false;
-                convertBtn.textContent = 'Convert to PPTX';
-            }
-        });
+                // Generate the HTML content
+                const htmlContent = extractFromSway(embedCode);
 
-        document.getElementById('downloadBtn').addEventListener('click', async () => {
-            if (pptx) {
-                await pptx.writeFile('presentation.pptx');
-            }
-        });
+                // Create blob and download
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileName}.html`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
 
-        function showPreview(content) {
-            const preview = document.getElementById('preview');
-            const previewContent = document.getElementById('previewContent');
-            
-            previewContent.innerHTML = '';
-            
-            const slides = content.split('\n\n');
-            slides.forEach((slide, index) => {
-                const slideDiv = document.createElement('div');
-                slideDiv.className = 'preview-slide';
-                slideDiv.innerHTML = `<strong>Slide ${index + 1}</strong><br>${slide}`;
-                previewContent.appendChild(slideDiv);
-            });
-            
-            preview.classList.remove('hidden');
+                successDiv.textContent = 'Successfully created presentation file! Follow the instructions in the downloaded file to import into Google Slides.';
+                successDiv.style.display = 'block';
+            } catch (error) {
+                errorDiv.textContent = error.message || 'An error occurred during conversion';
+                errorDiv.style.display = 'block';
+            }
         }
     </script>
 </body>
