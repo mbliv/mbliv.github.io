@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sway to Google Slides Converter</title>
+    <!-- Include PptxGenJS from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
     <style>
+        /* Previous styles remain the same... */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -152,10 +155,26 @@
         .hidden {
             display: none;
         }
+
+        #preview {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 4px;
+        }
+
+        .preview-slide {
+            background: white;
+            margin: 8px 0;
+            padding: 16px;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Previous HTML structure remains the same... -->
         <div class="header">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
@@ -212,13 +231,18 @@
                 </ol>
             </div>
         </div>
+
+        <div id="preview" class="hidden">
+            <h3>Preview:</h3>
+            <div id="previewContent"></div>
+        </div>
     </div>
 
     <script>
         let currentInputType = 'link';
-        let convertedFile = null;
+        let pptx = null;
         
-        // Input type switching
+        // Input type switching logic remains the same...
         document.querySelectorAll('.input-type-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.input-type-btn').forEach(b => b.classList.remove('active'));
@@ -235,7 +259,7 @@
             });
         });
 
-        // File drop handling
+        // File handling logic remains the same...
         const fileDropArea = document.querySelector('.file-drop');
         const fileInput = document.querySelector('input[type="file"]');
 
@@ -269,45 +293,79 @@
             }
         }
 
-        // Conversion handling
+        // New conversion logic using PptxGenJS
+        async function createPresentation(content) {
+            const pptx = new PptxGenJS();
+            
+            // Set presentation properties
+            pptx.layout = 'LAYOUT_16x9';
+            pptx.title = 'Converted Presentation';
+
+            // Add a title slide
+            let slide = pptx.addSlide();
+            slide.addText('Converted Presentation', {
+                x: '15%',
+                y: '40%',
+                w: '70%',
+                fontSize: 44,
+                align: 'center',
+                color: '363636'
+            });
+
+            // Add content slides (this is where you'd parse and add your actual content)
+            const demoContent = [
+                "First Slide Content",
+                "Second Slide Content",
+                "Third Slide Content with \n• Bullet Point 1\n• Bullet Point 2"
+            ];
+
+            demoContent.forEach(text => {
+                slide = pptx.addSlide();
+                slide.addText(text, {
+                    x: '10%',
+                    y: '10%',
+                    w: '80%',
+                    h: '80%',
+                    fontSize: 24,
+                    color: '363636',
+                    breakLine: true
+                });
+            });
+
+            return pptx;
+        }
+
+        // Convert button handler
         document.getElementById('convertBtn').addEventListener('click', async () => {
             const convertBtn = document.getElementById('convertBtn');
             const errorAlert = document.getElementById('errorAlert');
             const successSection = document.getElementById('successSection');
+            const preview = document.getElementById('preview');
             
             convertBtn.disabled = true;
             convertBtn.textContent = 'Converting...';
             errorAlert.classList.add('hidden');
             successSection.classList.add('hidden');
+            preview.classList.add('hidden');
 
             try {
-                // Simulate conversion process
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Get input content
+                let content;
+                if (currentInputType === 'file') {
+                    const file = fileInput.files[0];
+                    if (!file) throw new Error('Please select a file');
+                    content = await file.text();
+                } else {
+                    content = document.querySelector('textarea').value;
+                    if (!content) throw new Error('Please provide input content');
+                }
 
-                // Create a simple PPTX-like structure (this is a simplified example)
-                const xmlContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-                    <p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-                        <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
-                        <p:sldIdLst>
-                            <p:sld>
-                                <p:cSld>
-                                    <p:spTree>
-                                        <p:sp>
-                                            <p:txBody>
-                                                <a:p><a:r><a:t>Converted Presentation</a:t></a:r></a:p>
-                                            </p:txBody>
-                                        </p:sp>
-                                    </p:spTree>
-                                </p:cSld>
-                            </p:sld>
-                        </p:sldIdLst>
-                    </p:presentation>`;
-
-                convertedFile = new Blob([xmlContent], { 
-                    type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' 
-                });
+                // Create presentation
+                pptx = await createPresentation(content);
                 
+                // Show success and preview
                 successSection.classList.remove('hidden');
+                showPreview(content);
             } catch (err) {
                 errorAlert.textContent = err.message || 'Error during conversion';
                 errorAlert.classList.remove('hidden');
@@ -317,19 +375,32 @@
             }
         });
 
-        // Download handling
-        document.getElementById('downloadBtn').addEventListener('click', () => {
-            if (convertedFile) {
-                const url = URL.createObjectURL(convertedFile);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'presentation.pptx';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+        // Download button handler
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            if (pptx) {
+                await pptx.writeFile('presentation.pptx');
             }
         });
+
+        // Preview function
+        function showPreview(content) {
+            const preview = document.getElementById('preview');
+            const previewContent = document.getElementById('previewContent');
+            
+            // Clear previous preview
+            previewContent.innerHTML = '';
+            
+            // Add preview slides
+            const slides = content.split('\n\n');
+            slides.forEach((slide, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = 'preview-slide';
+                slideDiv.innerHTML = `<strong>Slide ${index + 1}</strong><br>${slide}`;
+                previewContent.appendChild(slideDiv);
+            });
+            
+            preview.classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
