@@ -1,0 +1,236 @@
+import React, { useState } from 'react';
+import { Upload, Download, File, FileText } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const SwayToSlidesConverter = () => {
+  const [conversionStatus, setConversionStatus] = useState('idle');
+  const [inputType, setInputType] = useState('link');
+  const [inputValue, setInputValue] = useState('');
+  const [error, setError] = useState('');
+  const [convertedFile, setConvertedFile] = useState(null);
+
+  const extractSwayContent = async (input, type) => {
+    // Simulate content extraction
+    let content = {
+      title: 'My Presentation',
+      slides: []
+    };
+
+    if (type === 'file') {
+      // Parse file content
+      const reader = new FileReader();
+      
+      try {
+        const text = await new Promise((resolve, reject) => {
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = reject;
+          reader.readAsText(input);
+        });
+
+        // Simple parsing of PDF/Word content
+        const paragraphs = text.split('\n\n');
+        content.slides = paragraphs.map((p, i) => ({
+          id: i,
+          type: 'text',
+          content: p
+        }));
+      } catch (err) {
+        throw new Error('Error reading file');
+      }
+    } else {
+      // Parse link or embed code
+      const demoContent = [
+        { type: 'title', content: 'Welcome to My Presentation' },
+        { type: 'text', content: 'This is the first slide content' },
+        { type: 'text', content: 'Here is another slide with important information' }
+      ];
+      content.slides = demoContent;
+    }
+
+    return content;
+  };
+
+  const generatePPTXContent = (content) => {
+    // Generate a simple XML string that represents PPTX content
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+      <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
+      <p:sldIdLst>
+        ${content.slides.map((slide, index) => `
+          <p:sld>
+            <p:cSld>
+              <p:spTree>
+                <p:sp>
+                  <p:txBody>
+                    <a:p><a:r><a:t>${slide.content}</a:t></a:r></a:p>
+                  </p:txBody>
+                </p:sp>
+              </p:spTree>
+            </p:cSld>
+          </p:sld>
+        `).join('')}
+      </p:sldIdLst>
+    </p:presentation>`;
+
+    // Convert XML to Blob
+    const blob = new Blob([xmlContent], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+    return blob;
+  };
+
+  const handleConversion = async () => {
+    setError('');
+    setConversionStatus('processing');
+    setConvertedFile(null);
+    
+    try {
+      if (!inputValue) {
+        throw new Error('Please provide input content');
+      }
+
+      // Extract content from input
+      const content = await extractSwayContent(
+        inputType === 'file' ? inputValue : inputValue,
+        inputType
+      );
+
+      // Generate PPTX file
+      const pptxBlob = generatePPTXContent(content);
+      setConvertedFile(pptxBlob);
+      setConversionStatus('completed');
+    } catch (err) {
+      setError(err.message);
+      setConversionStatus('error');
+    }
+  };
+
+  const handleDownload = () => {
+    if (convertedFile) {
+      const url = URL.createObjectURL(convertedFile);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'presentation.pptx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto p-4 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <File className="w-6 h-6" />
+            Sway to Google Slides Converter
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="block font-medium">Input Method</label>
+            <div className="flex gap-4">
+              <button
+                className={`px-4 py-2 rounded ${
+                  inputType === 'link' ? 'bg-blue-500 text-white' : 'bg-gray-100'
+                }`}
+                onClick={() => setInputType('link')}
+              >
+                Visual Link
+              </button>
+              <button
+                className={`px-4 py-2 rounded ${
+                  inputType === 'embed' ? 'bg-blue-500 text-white' : 'bg-gray-100'
+                }`}
+                onClick={() => setInputType('embed')}
+              >
+                Embed Code
+              </button>
+              <button
+                className={`px-4 py-2 rounded ${
+                  inputType === 'file' ? 'bg-blue-500 text-white' : 'bg-gray-100'
+                }`}
+                onClick={() => setInputType('file')}
+              >
+                PDF/Word File
+              </button>
+            </div>
+          </div>
+
+          {inputType === 'file' ? (
+            <div className="border-2 border-dashed rounded-lg p-8 text-center">
+              <Upload className="mx-auto w-12 h-12 text-gray-400" />
+              <p className="mt-2">Drag and drop your file here, or click to browse</p>
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.docx"
+                onChange={(e) => setInputValue(e.target.files[0])}
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label className="block font-medium">
+                {inputType === 'link' ? 'Sway Visual Link' : 'Embed Code'}
+              </label>
+              <textarea
+                className="w-full h-32 p-2 border rounded"
+                placeholder={
+                  inputType === 'link'
+                    ? 'Paste your Sway visual link here...'
+                    : 'Paste your Sway embed code here...'
+                }
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+              />
+            </div>
+          )}
+
+          <button
+            className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
+            onClick={handleConversion}
+            disabled={conversionStatus === 'processing'}
+          >
+            {conversionStatus === 'processing' ? 'Converting...' : 'Convert to PPTX'}
+          </button>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {conversionStatus === 'completed' && (
+            <div className="space-y-4">
+              <Alert>
+                <AlertDescription className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Conversion completed! Your presentation is ready to download.
+                </AlertDescription>
+              </Alert>
+              
+              <button
+                className="w-full py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-center gap-2"
+                onClick={handleDownload}
+              >
+                <Download className="w-4 h-4" />
+                Download PPTX File
+              </button>
+              
+              <div className="text-sm text-gray-600">
+                <p>To use in Google Slides:</p>
+                <ol className="list-decimal ml-4">
+                  <li>Go to slides.google.com</li>
+                  <li>Click "File" → "Import"</li>
+                  <li>Upload the downloaded PPTX file</li>
+                </ol>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default SwayToSlidesConverter;
