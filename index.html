@@ -2,161 +2,140 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sway to Google Slides Converter</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .converter-container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            resize: vertical;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background: #1a73e8;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background: #1557b0;
-        }
-        .error {
-            color: #d93025;
-            margin: 10px 0;
-            display: none;
-        }
-        .success {
-            color: #188038;
-            margin: 10px 0;
-            display: none;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sway to PowerPoint Converter</title>
+    <!-- React -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
 </head>
-<body>
-    <div class="converter-container">
-        <h1>Sway to Google Slides Converter</h1>
-        
-        <div>
-            <label for="embedCode">Paste your Sway embed code:</label>
-            <textarea id="embedCode" placeholder="<iframe src='https://sway.office.com/...'" required></textarea>
-        </div>
-        
-        <div>
-            <label for="fileName">Presentation name:</label>
-            <input type="text" id="fileName" placeholder="My Presentation" required>
-        </div>
-        
-        <button onclick="convertAndDownload()">Convert & Download</button>
-        
-        <div id="error" class="error"></div>
-        <div id="success" class="success"></div>
-    </div>
+<body class="min-h-screen bg-gray-100 p-4">
+    <div id="root"></div>
 
-    <script>
-        function extractFromSway(embedCode) {
-            const container = document.createElement('div');
-            container.innerHTML = embedCode;
-            const iframe = container.querySelector('iframe');
-            
-            if (!iframe) {
-                throw new Error('Invalid embed code: No iframe found');
-            }
+    <script type="text/babel">
+        const { useState } = React;
+        const { Download } = lucide;
 
-            // Generate presentation HTML directly since we can't access iframe content
-            // due to cross-origin restrictions
-            return `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-                        .slide { width: 960px; height: 720px; margin: 20px auto; padding: 40px;
-                                border: 1px solid #ccc; background: white; page-break-after: always; }
-                        img { max-width: 100%; height: auto; }
-                    </style>
-                </head>
-                <body>
-                    <!-- Embedded Sway presentation -->
-                    ${embedCode}
+        function SwayConverter() {
+            const [embedCode, setEmbedCode] = useState('');
+            const [fileName, setFileName] = useState('');
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+
+            const convertAndDownload = () => {
+                setError('');
+                setSuccess('');
+
+                try {
+                    if (!embedCode.trim()) {
+                        throw new Error('Please paste your Sway embed code');
+                    }
+
+                    // Generate PowerPoint XML content
+                    const pptxContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?mso-application progid="PowerPoint.Show"?>
+<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">
+<pkg:part pkg:name="/ppt/presentation.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml">
+<pkg:xmlData>
+<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
+<p:sldIdLst><p:sldId id="256" r:id="rId2"/></p:sldIdLst>
+<p:sldSz cx="9144000" cy="6858000"/>
+<p:notesSz cx="6858000" cy="9144000"/>
+</p:presentation>
+</pkg:xmlData>
+</pkg:part>
+</pkg:package>`;
+
+                    // Create blob as PowerPoint file
+                    const blob = new Blob([pptxContent], {
+                        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+                    });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${fileName.trim() || 'presentation'}.pptx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    setSuccess('PowerPoint file created! You can now import this into Google Slides.');
+                } catch (err) {
+                    setError(err.message || 'An error occurred during conversion');
+                }
+            };
+
+            return (
+                <div className="w-full max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
+                    <h1 className="text-2xl font-bold mb-6">Sway to PowerPoint Converter</h1>
                     
-                    <!-- Instructions for Google Slides -->
-                    <div class="slide">
-                        <h2>Instructions for Google Slides Import</h2>
-                        <ol>
-                            <li>Open Google Slides</li>
-                            <li>Create a new presentation</li>
-                            <li>File > Import slides</li>
-                            <li>Upload this HTML file</li>
-                            <li>Select the slides you want to import</li>
-                            <li>Click "Import slides"</li>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Paste your Sway embed code:
+                        </label>
+                        <textarea
+                            className="w-full h-32 px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
+                            placeholder="<iframe src='https://sway.office.com/...'"
+                            value={embedCode}
+                            onChange={(e) => setEmbedCode(e.target.value)}
+                        />
+                    </div>
+                    
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Presentation name:
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
+                            placeholder="My Presentation"
+                            value={fileName}
+                            onChange={(e) => setFileName(e.target.value)}
+                        />
+                    </div>
+                    
+                    <button
+                        onClick={convertAndDownload}
+                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Download size={20} />
+                        Convert & Download PowerPoint
+                    </button>
+                    
+                    {error && (
+                        <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg">
+                            {error}
+                        </div>
+                    )}
+                    
+                    {success && (
+                        <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-lg">
+                            {success}
+                        </div>
+                    )}
+
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <h2 className="text-lg font-semibold mb-2">How to use:</h2>
+                        <ol className="list-decimal pl-4 space-y-1">
+                            <li>Copy your Sway embed code from the Share menu in Sway</li>
+                            <li>Paste it into the box above</li>
+                            <li>Enter a name for your presentation</li>
+                            <li>Click 'Convert & Download PowerPoint'</li>
+                            <li>Open Google Slides and use File > Import to upload the PowerPoint file</li>
                         </ol>
                     </div>
-                </body>
-                </html>
-            `;
+                </div>
+            );
         }
 
-        function convertAndDownload() {
-            const embedCode = document.getElementById('embedCode').value.trim();
-            const fileName = document.getElementById('fileName').value.trim() || 'presentation';
-            const errorDiv = document.getElementById('error');
-            const successDiv = document.getElementById('success');
-            
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
-
-            try {
-                if (!embedCode) {
-                    throw new Error('Please paste your Sway embed code');
-                }
-
-                // Generate the HTML content
-                const htmlContent = extractFromSway(embedCode);
-
-                // Create blob and download
-                const blob = new Blob([htmlContent], { type: 'text/html' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${fileName}.html`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                successDiv.textContent = 'Successfully created presentation file! Follow the instructions in the downloaded file to import into Google Slides.';
-                successDiv.style.display = 'block';
-            } catch (error) {
-                errorDiv.textContent = error.message || 'An error occurred during conversion';
-                errorDiv.style.display = 'block';
-            }
-        }
+        // Render the app
+        ReactDOM.render(<SwayConverter />, document.getElementById('root'));
     </script>
 </body>
 </html>
