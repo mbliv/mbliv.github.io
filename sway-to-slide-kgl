@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document to PowerPoint Converter</title>
+    <!-- Load required libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+    <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,6 +15,7 @@
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
+            line-height: 1.6;
         }
         
         .container {
@@ -29,12 +31,21 @@
             margin-bottom: 30px;
         }
 
+        .instructions {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
         .upload-section {
             border: 2px dashed #ccc;
             padding: 20px;
             text-align: center;
             margin-bottom: 20px;
             border-radius: 4px;
+            background-color: #fff;
+            transition: all 0.3s ease;
         }
 
         .upload-section.dragover {
@@ -51,6 +62,7 @@
             cursor: pointer;
             font-size: 16px;
             margin: 10px 0;
+            transition: background-color 0.3s ease;
         }
 
         button:hover {
@@ -66,16 +78,19 @@
             margin-top: 20px;
             padding: 10px;
             border-radius: 4px;
+            display: none;
         }
 
         .success {
             background-color: #d4edda;
             color: #155724;
+            display: block !important;
         }
 
         .error {
             background-color: #f8d7da;
             color: #721c24;
+            display: block !important;
         }
 
         #preview {
@@ -84,6 +99,7 @@
             padding: 10px;
             max-height: 300px;
             overflow-y: auto;
+            background-color: white;
         }
 
         .progress-bar {
@@ -93,6 +109,7 @@
             border-radius: 10px;
             margin: 10px 0;
             overflow: hidden;
+            display: none;
         }
 
         .progress {
@@ -101,19 +118,50 @@
             background-color: #4CAF50;
             transition: width 0.3s ease;
         }
+
+        .slide-preview {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        .slide-preview h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Document to PowerPoint Converter</h1>
         
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Upload a Word (.docx) or PDF file</li>
+                <li>Each slide should be separated by a horizontal line in your document</li>
+                <li>Review the preview to ensure correct slide separation</li>
+                <li>Click "Convert to PowerPoint" to generate your presentation</li>
+            </ol>
+        </div>
+
         <div class="upload-section" id="dropZone">
             <p>Drag and drop a Word or PDF file here, or click to select</p>
             <input type="file" id="fileInput" accept=".docx,.pdf" style="display: none;">
             <button onclick="document.getElementById('fileInput').click()">Select File</button>
         </div>
 
-        <div class="progress-bar">
+        <div class="progress-bar" id="progressBarContainer">
             <div class="progress" id="progressBar"></div>
         </div>
 
@@ -121,23 +169,30 @@
         <div id="preview"></div>
         
         <button id="convertBtn" disabled>Convert to PowerPoint</button>
+
+        <footer>
+            <p>Created by [Your Name] - <a href="https://github.com/[your-username]" target="_blank">GitHub</a></p>
+        </footer>
     </div>
 
     <script>
         // Initialize PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+        // Global variables
         let slides = [];
         let currentFile = null;
 
-        // Setup drag and drop
+        // DOM elements
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const status = document.getElementById('status');
         const preview = document.getElementById('preview');
         const convertBtn = document.getElementById('convertBtn');
         const progressBar = document.getElementById('progressBar');
+        const progressBarContainer = document.getElementById('progressBarContainer');
 
+        // Event Listeners
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('dragover');
@@ -159,14 +214,19 @@
             handleFile(file);
         });
 
+        convertBtn.addEventListener('click', generatePowerPoint);
+
+        // File handling
         function handleFile(file) {
             currentFile = file;
             status.innerHTML = `Processing ${file.name}...`;
             status.className = '';
+            status.style.display = 'block';
             preview.innerHTML = '';
             slides = [];
             convertBtn.disabled = true;
             progressBar.style.width = '0%';
+            progressBarContainer.style.display = 'block';
 
             if (file.name.endsWith('.docx')) {
                 processWord(file);
@@ -175,9 +235,11 @@
             } else {
                 status.innerHTML = 'Please upload a Word (.docx) or PDF file.';
                 status.className = 'error';
+                progressBarContainer.style.display = 'none';
             }
         }
 
+        // Process Word documents
         async function processWord(file) {
             try {
                 const arrayBuffer = await file.arrayBuffer();
@@ -197,12 +259,15 @@
                 status.innerHTML = 'Word document processed successfully!';
                 status.className = 'success';
                 convertBtn.disabled = false;
+                progressBarContainer.style.display = 'none';
             } catch (error) {
                 status.innerHTML = 'Error processing Word document: ' + error.message;
                 status.className = 'error';
+                progressBarContainer.style.display = 'none';
             }
         }
 
+        // Process PDF documents
         async function processPDF(file) {
             try {
                 const arrayBuffer = await file.arrayBuffer();
@@ -244,26 +309,35 @@
                 status.innerHTML = 'PDF processed successfully!';
                 status.className = 'success';
                 convertBtn.disabled = false;
+                progressBarContainer.style.display = 'none';
             } catch (error) {
                 status.innerHTML = 'Error processing PDF: ' + error.message;
                 status.className = 'error';
+                progressBarContainer.style.display = 'none';
             }
         }
 
+        // Update preview
         function updatePreview() {
             preview.innerHTML = slides.map((slide, index) => `
-                <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+                <div class="slide-preview">
                     <h3>Slide ${index + 1}</h3>
                     <div>${slide.content}</div>
                 </div>
             `).join('');
         }
 
-        convertBtn.addEventListener('click', generatePowerPoint);
-
+        // Generate PowerPoint
         async function generatePowerPoint() {
             try {
+                if (typeof PptxGenJS === 'undefined') {
+                    throw new Error('PowerPoint generation library not loaded. Please refresh the page.');
+                }
+
                 status.innerHTML = 'Generating PowerPoint...';
+                status.className = '';
+                status.style.display = 'block';
+                
                 const pptx = new PptxGenJS();
 
                 // Set presentation properties
@@ -274,7 +348,7 @@
                 for (const slideContent of slides) {
                     const slide = pptx.addSlide();
                     
-                    // Add text content to slide
+                    // Add text content to slide with formatting
                     slide.addText(slideContent.content, {
                         x: 0.5,
                         y: 0.5,
@@ -283,7 +357,9 @@
                         fontSize: 14,
                         color: '363636',
                         breakLine: true,
-                        wrap: true
+                        wrap: true,
+                        valign: 'top',
+                        align: 'left'
                     });
                 }
 
@@ -291,7 +367,7 @@
                 const fileName = `${currentFile.name.split('.')[0]}.pptx`;
                 await pptx.writeFile({ fileName: fileName });
                 
-                status.innerHTML = 'PowerPoint file generated successfully!';
+                status.innerHTML = 'PowerPoint file generated and downloaded successfully!';
                 status.className = 'success';
             } catch (error) {
                 status.innerHTML = 'Error generating PowerPoint: ' + error.message;
