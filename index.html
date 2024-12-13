@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document to Slides Converter</title>
+    <title>Document to PowerPoint Converter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -104,7 +105,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Document to Slides Converter</h1>
+        <h1>Document to PowerPoint Converter</h1>
         
         <div class="upload-section" id="dropZone">
             <p>Drag and drop a Word or PDF file here, or click to select</p>
@@ -119,8 +120,7 @@
         <div id="status"></div>
         <div id="preview"></div>
         
-        <button id="convertBtn" disabled>Convert to Slides</button>
-        <button id="downloadBtn" disabled>Download Slides</button>
+        <button id="convertBtn" disabled>Convert to PowerPoint</button>
     </div>
 
     <script>
@@ -136,7 +136,6 @@
         const status = document.getElementById('status');
         const preview = document.getElementById('preview');
         const convertBtn = document.getElementById('convertBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
         const progressBar = document.getElementById('progressBar');
 
         dropZone.addEventListener('dragover', (e) => {
@@ -167,7 +166,6 @@
             preview.innerHTML = '';
             slides = [];
             convertBtn.disabled = true;
-            downloadBtn.disabled = true;
             progressBar.style.width = '0%';
 
             if (file.name.endsWith('.docx')) {
@@ -261,47 +259,44 @@
             `).join('');
         }
 
-        convertBtn.addEventListener('click', () => {
-            generateSlides();
-        });
+        convertBtn.addEventListener('click', generatePowerPoint);
 
-        function generateSlides() {
-            // Create a simple HTML presentation format
-            const presentation = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <style>
-                        .slide { page-break-after: always; padding: 20px; }
-                        img { max-width: 100%; height: auto; }
-                    </style>
-                </head>
-                <body>
-                    ${slides.map((slide, index) => `
-                        <div class="slide">
-                            ${slide.content}
-                        </div>
-                    `).join('')}
-                </body>
-                </html>
-            `;
+        async function generatePowerPoint() {
+            try {
+                status.innerHTML = 'Generating PowerPoint...';
+                const pptx = new PptxGenJS();
 
-            // Create blob and download link
-            const blob = new Blob([presentation], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            
-            downloadBtn.disabled = false;
-            downloadBtn.onclick = () => {
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${currentFile.name.split('.')[0]}_slides.html`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            };
+                // Set presentation properties
+                pptx.author = 'Document Converter';
+                pptx.title = currentFile.name.split('.')[0];
 
-            status.innerHTML = 'Slides generated! Click Download to save.';
-            status.className = 'success';
+                // Create slides
+                for (const slideContent of slides) {
+                    const slide = pptx.addSlide();
+                    
+                    // Add text content to slide
+                    slide.addText(slideContent.content, {
+                        x: 0.5,
+                        y: 0.5,
+                        w: '90%',
+                        h: '90%',
+                        fontSize: 14,
+                        color: '363636',
+                        breakLine: true,
+                        wrap: true
+                    });
+                }
+
+                // Save the PowerPoint file
+                const fileName = `${currentFile.name.split('.')[0]}.pptx`;
+                await pptx.writeFile({ fileName: fileName });
+                
+                status.innerHTML = 'PowerPoint file generated successfully!';
+                status.className = 'success';
+            } catch (error) {
+                status.innerHTML = 'Error generating PowerPoint: ' + error.message;
+                status.className = 'error';
+            }
         }
     </script>
 </body>
